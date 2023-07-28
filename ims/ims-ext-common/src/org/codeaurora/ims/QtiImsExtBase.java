@@ -25,8 +25,8 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
 package org.codeaurora.ims;
@@ -37,6 +37,7 @@ import android.os.RemoteException;
 import android.telephony.ims.feature.ImsFeature;
 
 import org.codeaurora.ims.internal.ICrsCrbtController;
+import org.codeaurora.ims.internal.IVideoCallProvider;
 import org.codeaurora.ims.internal.IQtiImsExt;
 import org.codeaurora.ims.internal.IQtiImsExtListener;
 import org.codeaurora.ims.internal.IImsArController;
@@ -328,6 +329,14 @@ public abstract class QtiImsExtBase {
                     "setGlassesFree3dVideoCapability", mExecutor,
                     QtiImsExtUtils.MODIFY_PHONE_STATE, mContext);
         }
+
+        @Override
+        public IVideoCallProvider getVideoProvider(int phoneId, int token) throws RemoteException {
+            return QtiImsExtUtils.executeMethodAsyncForResult(() ->
+                    QtiImsExtBase.this.onGetVideoProvider(phoneId, token),
+                    "onGetVideoProvider", mExecutor,
+                    QtiImsExtUtils.MODIFY_PHONE_STATE, mContext);
+        }
     };
 
     private QtiImsExtBinder mQtiImsExtBinder;
@@ -482,5 +491,10 @@ public abstract class QtiImsExtBase {
     protected void onSetGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
             IQtiImsExtListener listener) {
         // no-op
-}
+    }
+
+    protected IVideoCallProvider onGetVideoProvider(int phoneId, int token) {
+        // no-op
+        return null;
+    }
 }
