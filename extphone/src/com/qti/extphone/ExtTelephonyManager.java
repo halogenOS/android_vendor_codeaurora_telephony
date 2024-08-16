@@ -1351,6 +1351,7 @@ public class ExtTelephonyManager {
     }
 
     public void unregisterCallback(ExtPhoneCallbackListener callback) {
+        callback.cleanUp();
         unRegisterCallback(callback.mCallback);
     }
 
