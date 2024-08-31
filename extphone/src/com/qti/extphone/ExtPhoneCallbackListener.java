@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -82,23 +82,44 @@ public class ExtPhoneCallbackListener {
     private Handler mHandler;
     IExtPhoneCallback mCallback = new IExtPhoneCallbackStub(this);
 
+    /**
+     * Create the sHandlerThread per process.
+     * sHandlerThread is destroyed when process dies.
+     */
+    private static HandlerThread sHandlerThread;
+    private Looper mLooper;
+
     public ExtPhoneCallbackListener() {
-        HandlerThread headlerThread = new HandlerThread(TAG);
-        headlerThread.start();
-        Looper looper = headlerThread.getLooper();
-        init(looper);
+        if (sHandlerThread == null) {
+            sHandlerThread = new HandlerThread(TAG);
+            sHandlerThread.start();
+        }
+        mLooper = sHandlerThread.getLooper();
+        init();
     }
 
     public ExtPhoneCallbackListener(Looper looper) {
-        init(looper);
+        mLooper = looper;
+        init();
     }
 
-    private void init(Looper looper) {
-        mHandler = new Handler(looper) {
+    public void cleanUp() {
+        mLooper = null;
+    }
+
+    private void init() {
+        if (mLooper == null) {
+            return;
+        }
+        mHandler = new Handler(mLooper) {
             public void handleMessage(Message msg) {
                 Log.d(TAG, "handleMessage");
                 if (DBG) {
                     Log.d(TAG, " what=0x" + Integer.toHexString(msg.what) + " msg=" + msg);
+                }
+                if (mLooper == null) {
+                    Log.d(TAG, "Client is unregistered for events. msg=" + msg);
+                    return;
                 }
                 switch (msg.what) {
                     case EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE:

@@ -580,4 +580,7 @@ public class QtiCallConstants {
     public static final int SRTP_CATEGORY_VOICE = 1 << 0;
     public static final int SRTP_CATEGORY_VIDEO = 1 << 1;
     public static final int SRTP_CATEGORY_TEXT = 1 << 2;
+
+    // Call reason
+    public static final String EXTRA_CALL_REASON = "callReason";
 }
