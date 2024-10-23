@@ -78,7 +78,7 @@ public class ExtTelephonyManager {
     public static final int FEATURE_CELLULAR_ROAMING                       = FEATURE_BASE + 4;
     public static final int FEATURE_CIWLAN_MODE_PREFERENCE                 = FEATURE_BASE + 5;
     public static final int FEATURE_SMART_TEMP_DDS_VIA_RADIO_CONFIG        = FEATURE_BASE + 6;
-    // public static final int FEATURE_EMERGENCY_ENHANCEMENT                  = FEATURE_BASE + 7;
+    public static final int FEATURE_EMERGENCY_ENHANCEMENT                  = FEATURE_BASE + 7;
     public static final int FEATURE_TDSCDMA_SUPPORT                        = FEATURE_BASE + 8;
 
     private static ExtTelephonyManager mInstance;
@@ -1293,6 +1293,30 @@ public class ExtTelephonyManager {
             Log.e(LOG_TAG, "setCellularRoamingPreference failed.", ex);
         }
         return token;
+    }
+
+    public boolean isEmcSupported(int slotId) {
+        if (isServiceConnected()) {
+            try {
+                return mExtTelephonyService.isEmcSupported(slotId);
+            } catch (RemoteException ex) {
+                Log.e(LOG_TAG, "isEmcSupported Failed.", ex);
+            }
+        }
+        Log.e(LOG_TAG, "isEmcSupported: service not connected!");
+        return false;
+    }
+
+    public boolean isEmfSupported(int slotId) {
+        if (isServiceConnected()) {
+            try {
+                return mExtTelephonyService.isEmfSupported(slotId);
+            } catch (RemoteException ex) {
+                Log.e(LOG_TAG, "isEmfSupported Failed.", ex);
+            }
+        }
+        Log.e(LOG_TAG, "isEmfSupported: service not connected!");
+        return false;
     }
 
     public Token queryNrIcon(int slotId, Client client) {

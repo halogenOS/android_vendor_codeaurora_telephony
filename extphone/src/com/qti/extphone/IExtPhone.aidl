@@ -721,6 +721,22 @@ interface IExtPhone {
     CiwlanConfig getCiwlanModeUserPreference(int slotId);
 
     /**
+     * Query emergency call supported
+     *
+     * @param - slotId: Slot ID for which this request is sent
+     * @return - boolean TRUE/FALSE if EMC is supported on this sub or not
+     */
+    boolean isEmcSupported(int slotId);
+
+    /**
+     * Query emergency call fallback supported
+     *
+     * @param - slotId: Slot ID for which this request is sent
+     * @return - boolean TRUE/FALSE if EMF is supported on this sub or not
+     */
+    boolean isEmfSupported(int slotId);
+
+    /**
      * Get the NR icon information to be shown on the UI
      *
      * @param slotId - Slot ID for which this request is sent
