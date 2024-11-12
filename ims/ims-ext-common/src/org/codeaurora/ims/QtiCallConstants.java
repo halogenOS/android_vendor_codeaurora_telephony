@@ -612,6 +612,22 @@ public class QtiCallConstants {
     // CRBT call
     public static final String EXTRA_IS_CRBT_CALL = "isCrbtCall";
 
+    // Glasses Free 3d Video type
+    public static final String GLASSES_FREE_3D_VIDEO_TYPE_EXTRA_KEY = "GlassesFree3DVideoType";
+
+    /* Glasses free 3D video type constants.
+     * CALL_GFREE_3D_NONE -- No 3D video formatting.
+     * CALL_GFREE_3D_SBS -- 3D video with format as half-width side-by-side.
+     * CALL_GFREE_3D_SBS_FULL -- 3D video with format as full-width side-by-side.
+     * CALL_GFREE_3D_TAB -- 3D video with format as half-width top-and-bottom.
+     * CALL_GFREE_3D_TAB_FULL -- 3D video with format as full-width top-and-bottom.
+    */
+    public static final int CALL_GFREE_3D_NONE = 0;
+    public static final int CALL_GFREE_3D_SBS = 1;
+    public static final int CALL_GFREE_3D_SBS_FULL = 2;
+    public static final int CALL_GFREE_3D_TAB = 3;
+    public static final int CALL_GFREE_3D_TAB_FULL = 4;
+
     /**
      * The value of voice/video/text is defined according to the SRTP categories
      * and the name in the extra is defined by QC IMS service.
