@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -897,5 +897,11 @@ public class QtiImsExtUtils {
                     e.getMessage());
             throw new RemoteException(e.getMessage());
         }
+    }
+
+    // Returns true if Carrier supports visualized voice call
+    public static boolean isVisualizedVoiceSupported(int phoneId, Context context) {
+        return isCarrierConfigEnabled(phoneId, context,
+                QtiCarrierConfigs.KEY_CARRIER_VISUALIZED_VOICE_SUPPORTED);
     }
 }

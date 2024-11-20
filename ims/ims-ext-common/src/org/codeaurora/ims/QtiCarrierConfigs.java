@@ -27,7 +27,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -209,4 +209,10 @@ public class QtiCarrierConfigs {
      */
     public static final String KEY_CARRIER_VIDEO_ONLINE_SERVICE_SUPPORTED =
         "carrier_video_online_service_supported_bool";
+
+    /* Config to determine if Carrier supports visualized voice call
+     * true - if visualized voice call is supported else false
+     */
+    public static final String KEY_CARRIER_VISUALIZED_VOICE_SUPPORTED =
+        "carrier_visualized_voice_supported_bool";
 }
