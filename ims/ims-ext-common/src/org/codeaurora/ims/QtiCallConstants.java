@@ -606,6 +606,12 @@ public class QtiCallConstants {
     // Video online service
     public static final String EXTRA_VIDEO_ONLINE_SERVICE_SUPPORTED = "isVosSupported";
 
+    // Visualized voice call
+    public static final String EXTRA_IS_VISUALIZED_VOICE_CALL = "isVisualizedVoiceCall";
+
+    // CRBT call
+    public static final String EXTRA_IS_CRBT_CALL = "isCrbtCall";
+
     /**
      * The value of voice/video/text is defined according to the SRTP categories
      * and the name in the extra is defined by QC IMS service.
