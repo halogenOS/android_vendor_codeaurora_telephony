@@ -27,7 +27,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -151,6 +151,38 @@ public class QtiCallConstants {
 
     /* Call fail error code to TCP_CONNECTION_REQ */
     public static final int CODE_TCP_CONNECTION_REQ = 3005;
+
+    /* Call fail error codes 3006-3020 covers
+     * various SIP related failures*/
+    public static final int CODE_MOVED_PERMANENTLY = 3006;
+
+    public static final int CODE_UNAUTHORIZED = 3007;
+
+    public static final int CODE_PAYMENT_REQUIRED = 3008;
+
+    public static final int CODE_GONE=3009;
+
+    public static final int CODE_REMOTE_UNSUPP_MEDIA_TYPE = 3010;
+
+    public static final int CODE_UNSUPPORTED_URI_SCHEME = 3011;
+
+    public static final int CODE_BAD_EXTENSION = 3012;
+
+    public static final int CODE_PEER_NOT_REACHABLE = 3013;
+
+    public static final int CODE_NOT_ACCEPTABLE_HERE = 3014;
+
+    public static final int CODE_SERVER_NOT_IMPLEMENTED = 3015;
+
+    public static final int CODE_SERVER_BAD_GATEWAY = 3016;
+
+    public static final int CODE_SERVER_VERSION_UNSUPPORTED = 3017;
+
+    public static final int CODE_SERVER_MESSAGE_TOO_LARGE = 3018;
+
+    public static final int CODE_BUSY_EVERYWHERE = 3019;
+
+    public static final int CODE_NOT_ACCEPTABLE_GLOBAL = 3020;
 
     // Default code to use for additional call info code.
     public static final int CODE_UNSPECIFIED = -1;
