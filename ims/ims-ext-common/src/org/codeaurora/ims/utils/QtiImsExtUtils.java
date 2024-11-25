@@ -904,4 +904,9 @@ public class QtiImsExtUtils {
         return isCarrierConfigEnabled(phoneId, context,
                 QtiCarrierConfigs.KEY_CARRIER_VISUALIZED_VOICE_SUPPORTED);
     }
+
+    // Returns int array if carrier supports given carrierConfig otherwise null.
+    public static int[] getIntArray(int phoneId, Context context, String carrierConfig) {
+        return QtiCarrierConfigHelper.getInstance().getIntArray(context, phoneId, carrierConfig);
+    }
 }
