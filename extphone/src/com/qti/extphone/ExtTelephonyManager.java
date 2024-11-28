@@ -1350,10 +1350,17 @@ public class ExtTelephonyManager {
     public Client registerCallbackWithEvents(String packageName, ExtPhoneCallbackListener callback,
             int[] events) {
         Client client = null;
+        // Check if callback is null prior to service connection status
+        // to align with the counterpart unregister.
+        if (callback == null) {
+            Log.e(LOG_TAG, "Callback is null");
+            return null;
+        }
         if (!isServiceConnected()) {
             Log.e(LOG_TAG, "service not connected!");
             return client;
         }
+        callback.setup();
         try {
             client = mExtTelephonyService.registerCallbackWithEvents(packageName,
                     callback.mCallback, events);
@@ -1376,7 +1383,11 @@ public class ExtTelephonyManager {
     }
 
     public void unregisterCallback(ExtPhoneCallbackListener callback) {
-        callback.cleanUp();
+        if (callback == null) {
+            Log.e(LOG_TAG, "Callback is null");
+            return;
+        }
+        callback.cleanup();
         unRegisterCallback(callback.mCallback);
     }
 
