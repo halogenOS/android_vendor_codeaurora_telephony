@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package org.codeaurora.ims.utils;
 
@@ -37,6 +41,7 @@ import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -199,8 +204,8 @@ public class QtiCarrierConfigHelper {
     }
 
     public boolean getBoolean(Context context, int phoneId, String key) {
-        if (!isValidPhoneId(phoneId)) {
-            Log.d(TAG, "Invalid phone ID: " + phoneId);
+        if (!isValidPhoneId(phoneId) || TextUtils.isEmpty(key)) {
+            Log.d(TAG, "Invalid phone ID: " + phoneId + " or key is null");
             return false;
         }
         sanityCheckConfigsLoaded(context, phoneId);
@@ -214,8 +219,8 @@ public class QtiCarrierConfigHelper {
     }
 
     public boolean getBoolean(int phoneId, String key) {
-        if (!isValidPhoneId(phoneId)) {
-            logd("getBoolean", "Invalid phone ID: " + phoneId);
+        if (!isValidPhoneId(phoneId) || TextUtils.isEmpty(key)) {
+            Log.d(TAG, "Invalid phone ID: " + phoneId + " or key is null");
             return false;
         }
         if (!mInitialized.get()) {
@@ -231,8 +236,8 @@ public class QtiCarrierConfigHelper {
     }
 
     public String[] getStringArray(Context context, int phoneId, String key) {
-        if (!isValidPhoneId(phoneId)) {
-            Log.d(TAG, "Invalid phone ID: " + phoneId);
+        if (!isValidPhoneId(phoneId) || TextUtils.isEmpty(key)) {
+            Log.d(TAG, "Invalid phone ID: " + phoneId + " or key is null");
             return null;
         }
         sanityCheckConfigsLoaded(context, phoneId);
@@ -240,6 +245,21 @@ public class QtiCarrierConfigHelper {
         PersistableBundle pb = mConfigsMap.get(phoneId);
         if (pb != null) {
             return pb.getStringArray(key);
+        }
+        Log.d(TAG, "WARNING, no carrier configs on phone Id: " + phoneId);
+        return null;
+    }
+
+    public int[] getIntArray(Context context, int phoneId, String key) {
+        if (!isValidPhoneId(phoneId) || TextUtils.isEmpty(key)) {
+            Log.d(TAG, "Invalid phone ID: " + phoneId + " or key is null");
+            return null;
+        }
+        sanityCheckConfigsLoaded(context, phoneId);
+        logd("getIntArray", "mInitialized - " + mInitialized.get() + " context - " + context);
+        PersistableBundle pb = mConfigsMap.get(phoneId);
+        if (pb != null) {
+            return pb.getIntArray(key);
         }
         Log.d(TAG, "WARNING, no carrier configs on phone Id: " + phoneId);
         return null;
