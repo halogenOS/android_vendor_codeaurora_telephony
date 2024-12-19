@@ -624,4 +624,7 @@ public class QtiCallConstants {
 
     // Call reason
     public static final String EXTRA_CALL_REASON = "callReason";
+
+    // possible conference abort reasons
+    public static final int PENDING_EMERGENCY_CALL = 0;
 }
