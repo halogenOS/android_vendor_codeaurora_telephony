@@ -35,7 +35,7 @@ import java.util.List;
 
 public class ExtPhoneCallbackListener {
     private static final String TAG = "ExtPhoneCallbackListener";
-    private static final boolean DBG = true;
+    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     public static final int EVENT_ALL = 0;
     public static final int EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE = 1;
@@ -95,7 +95,7 @@ public class ExtPhoneCallbackListener {
     private static final int UNUSED_SLOT_ID = -1;
     private static final int SUCCESS = 0;
 
-    private Handler mHandler;
+    private volatile Handler mHandler;
     IExtPhoneCallback mCallback = new IExtPhoneCallbackStub(this);
 
     /**
@@ -103,587 +103,620 @@ public class ExtPhoneCallbackListener {
      * sHandlerThread is destroyed when process dies.
      */
     private static HandlerThread sHandlerThread;
+    private static Object sLock = new Object();
     private Looper mLooper;
 
     public ExtPhoneCallbackListener() {
-        if (sHandlerThread == null) {
-            sHandlerThread = new HandlerThread(TAG);
-            sHandlerThread.start();
-        }
-        mLooper = sHandlerThread.getLooper();
-        init();
     }
 
     public ExtPhoneCallbackListener(Looper looper) {
         mLooper = looper;
-        init();
     }
 
-    public void cleanUp() {
-        mLooper = null;
-    }
-
-    private void init() {
-        if (mLooper == null) {
-            return;
-        }
-        mHandler = new Handler(mLooper) {
-            public void handleMessage(Message msg) {
-                Log.d(TAG, "handleMessage");
-                if (DBG) {
-                    Log.d(TAG, " what=0x" + Integer.toHexString(msg.what) + " msg=" + msg);
-                }
-                if (mLooper == null) {
-                    Log.d(TAG, "Client is unregistered for events. msg=" + msg);
-                    return;
-                }
-                switch (msg.what) {
-                    case EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.getFacilityLockForAppResponse(
-                                    result.mStatus, (int[]) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE : Exception = " +
-                                    e);
-                        }
-                        break;
-                    case EVENT_GET_NETWORK_SELECTION_MODE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.getNetworkSelectionModeResponse(
-                                    result.mSlotId, result.mToken, result.mStatus,
-                                    (NetworkSelectionMode) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_GET_NETWORK_SELECTION_MODE_RESPONSE : Exception = " +
-                                    e);
-                        }
-                        break;
-                    case EVENT_GET_QOS_PARAMETERS_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.getQosParametersResponse(result.mSlotId,
-                                    result.mToken, result.mStatus,
-                                    (QosParametersResult) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_GET_QOS_PARAMETERS_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_GET_QTIRADIO_CAPABILITY_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.getQtiRadioCapabilityResponse(
-                                    result.mSlotId, result.mToken, result.mStatus,
-                                    (int) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_GET_QTIRADIO_CAPABILITY_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_GET_SECURE_MODE_STATUS_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.getSecureModeStatusResponse(result.mToken,
-                                    result.mStatus, (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_GET_SECURE_MODE_STATUS_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_NETWORK_SCAN_RESULT:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.networkScanResult(result.mSlotId,
-                                    result.mToken, result.mStatus.get(), result.mError,
-                                    (List<CellInfo>) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_NETWORK_SCAN_RESULT : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_5G_CONFIG_INFO:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.on5gConfigInfo(result.mSlotId,
-                                    result.mToken, result.mStatus, (NrConfigType) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_5G_CONFIG_INFO : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_5G_STATUS:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.on5gStatus(result.mSlotId, result.mToken,
-                                    result.mStatus, (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_5G_STATUS : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_ANY_NR_BEARER_ALLOCATION:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onAnyNrBearerAllocation(result.mSlotId,
-                                    result.mToken, result.mStatus,
-                                    (BearerAllocationStatus) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_ANY_NR_BEARER_ALLOCATION : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DATA_DEACTIVATE_DELAY_TIME:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDataDeactivateDelayTime(result.mSlotId,
-                                    (long) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DATA_DEACTIVATE_DELAY_TIME : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_CAPABILITY_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchCapabilityChange(
-                                    result.mSlotId, result.mToken, result.mStatus,
-                                    (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_CAPABILITY_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_CONFIG_CAPABILITY_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchConfigCapabilityChanged(
-                                    result.mToken, result.mStatus,
-                                    (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_CAPABILITY_CHANGED :"
-                                    + " Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_CRITERIA_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchCriteriaChange(result.mSlotId,
-                                    (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_CRITERIA_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_CONFIG_CRITERIA_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchConfigCriteriaChanged(
-                                    (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_CRITERIA_CHANGED :"
-                                    + " Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_RECOMMENDATION:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchRecommendation(result.mSlotId,
-                                    (int) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_RECOMMENDATION : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DDS_SWITCH_CONFIG_RECOMMENDATION:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDdsSwitchConfigRecommendation(
-                                    (int) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_RECOMMENDATION :"
-                                    + " Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_ENABLE_ENDC:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onEnableEndc(result.mSlotId,
-                                    result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_ENABLE_ENDC : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_ENDC_STATUS:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onEndcStatus(result.mSlotId,
-                                    result.mToken, result.mStatus, (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_ENDC_STATUS : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_EPDG_OVER_CELLULAR_DATA_SUPPORTED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onEpdgOverCellularDataSupported(
-                                    result.mSlotId, (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_EPDG_OVER_CELLULAR_DATA_SUPPORTED : Exception = "
-                                    + e);
-                        }
-                        break;
-                    case EVENT_ON_IMEI_TYPE_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onImeiTypeChanged(
-                                    (QtiImeiInfo[]) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_IMEI_TYPE_CHANGED : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_NR_CONFIG_STATUS:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onNrConfigStatus(result.mSlotId,
-                                    result.mToken, result.mStatus, (NrConfig) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_NR_CONFIG_STATUS : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_NR_DC_PARAM:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onNrDcParam(result.mSlotId,
-                                    result.mToken, result.mStatus, (DcParam) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_NR_DC_PARAM : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_NR_ICON_TYPE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onNrIconType(result.mSlotId,
-                                    result.mToken, result.mStatus, (NrIconType) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_NR_ICON_TYPE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_QOS_PARAMETERS_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onQosParametersChanged(result.mSlotId,
-                                    result.mError, (QosParametersResult) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_QOS_PARAMETERS_CHANGED : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SECURE_MODE_STATUS_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onSecureModeStatusChange(
-                                    (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SECURE_MODE_STATUS_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SEND_USER_PREFERENCE_FOR_DATA_DURING_VOICE_CALL:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.
-                                    onSendUserPreferenceForDataDuringVoiceCall(result.mSlotId,
-                                    result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SEND_USER_PREFERENCE_FOR_DATA_DURING_VOICE_CALL : "
-                                    + "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SEND_USER_PREFERENCE_CONFIG_FOR_DATA_DURING_CALL:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.
-                                    onSendUserPreferenceConfigForDataDuringVoiceCall(
-                                    result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SEND_USER_PREFERENCE_CONFIG_FOR_DATA_DURING_CALL"
-                                    + " : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SET_NR_CONFIG:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onSetNrConfig(result.mSlotId,
-                                    result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SET_NR_CONFIG : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SIGNAL_STRENGTH:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onSignalStrength(result.mSlotId,
-                                    result.mToken, result.mStatus, (SignalStrength) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SIGNAL_STRENGTH : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SIM_TYPE_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onSimTypeChanged(
-                                    (QtiSimType[]) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_SIM_TYPE_CHANGED : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_UPPER_LAYER_IND_INFO:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onUpperLayerIndInfo(result.mSlotId,
-                                    result.mToken, result.mStatus,
-                                    (UpperLayerIndInfo) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_UPPER_LAYER_IND_INFO : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_QUERY_CALL_FORWARD_STATUS_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.queryCallForwardStatusResponse(
-                                    result.mStatus, (QtiCallForwardInfo[]) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_QUERY_CALL_FORWARD_STATUS_RESPONSE : Exception = " +
-                                    e);
-                        }
-                        break;
-                    case EVENT_SEND_CDMA_SMS_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.sendCdmaSmsResponse(result.mSlotId,
-                                    result.mToken, result.mStatus, (SmsResult) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SEND_CDMA_SMS_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_CARRIER_INFO_FOR_IMSI_ENCRYPTION_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setCarrierInfoForImsiEncryptionResponse(
-                                    result.mSlotId, result.mToken,
-                                    (QRadioResponseInfo) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_CARRIER_INFO_FOR_IMSI_ENCRYPTION_RESPONSE : " +
-                                    "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_MSIM_PREFERENCE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setMsimPreferenceResponse(result.mToken,
-                                    result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_MSIM_PREFERENCE_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_NETWORK_SELECTION_MODE_AUTOMATIC_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setNetworkSelectionModeAutomaticResponse(
-                                    result.mSlotId, result.mToken, result.mError);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_NETWORK_SELECTION_MODE_AUTOMATIC_RESPONSE : " +
-                                    "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_NETWORK_SELECTION_MODE_MANUAL_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setNetworkSelectionModeManualResponse(
-                                    result.mSlotId, result.mToken, result.mError);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_NETWORK_SELECTION_MODE_MANUAL_RESPONSE : " +
-                                    "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_SIM_TYPE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setSimTypeResponse(result.mToken,
-                                    result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_SIM_TYPE_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_SMART_DDS_SWITCH_TOGGLE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setSmartDdsSwitchToggleResponse(
-                                    result.mToken, (boolean) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_SMART_DDS_SWITCH_TOGGLE_RESPONSE : Exception = " +
-                                    e);
-                        }
-                        break;
-                    case EVENT_START_NETWORK_SCAN_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                        ExtPhoneCallbackListener.this.startNetworkScanResponse(result.mSlotId,
-                                result.mToken, result.mError);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_START_NETWORK_SCAN_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_STOP_NETWORK_SCAN_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.stopNetworkScanResponse(result.mSlotId,
-                                    result.mToken, result.mError);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_STOP_NETWORK_SCAN_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DUAL_DATA_CAPABILITY_CHANGED:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDualDataCapabilityChanged(
-                                    result.mToken, result.mStatus, (boolean)result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DUAL_DATA_CAPABILITY_CHANGED : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_DUAL_DATA_USER_PREFERENCE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setDualDataUserPreferenceResponse(
-                                    result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_DUAL_DATA_USER_PREFERENCE_RESPONSE :" +
-                                    "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_DUAL_DATA_RECOMMENDATION:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onDualDataRecommendation(
-                                    (DualDataRecommendation)result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_DUAL_DATA_RECOMMENDATION : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_SIM_PERSO_UNLOCK_STATUS_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onSimPersoUnlockStatusChange(
-                                    result.mSlotId, (QtiPersoUnlockStatus)result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG,
-                                    "EVENT_ON_SIM_PERSO_UNLOCK_STATUS_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_CELLULAR_ROAMING_PREFERENCE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setCellularRoamingPreferenceResponse(
-                                    result.mSlotId, result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_CELLULAR_ROAMING_PREFERENCE_RESPONSE : " +
-                                    "Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_CIWLAN_AVAILABLE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onCiwlanAvailable(
-                                    result.mSlotId, (boolean)result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG,
-                                    "EVENT_ON_CIWLAN_AVAILABLE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_CIWLAN_CONFIG_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onCiwlanConfigChange(
-                                    result.mSlotId, (CiwlanConfig)result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG,
-                                    "EVENT_ON_CIWLAN_CONFIG_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_SET_CIWLAN_MODE_USER_PREFERENCE_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.setCiwlanModeUserPreferenceResponse(
-                                result.mSlotId, result.mToken, result.mStatus);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_SET_CIWLAN_MODE_USER_PREFERENCE_RESPONSE" +
-                                    " : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_ON_NR_ICON_CHANGE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onNrIconChange(result.mSlotId,
-                                    (NrIcon) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_ON_NR_ICON_CHANGE : Exception = " + e);
-                        }
-                        break;
-                    case EVENT_QUERY_NR_ICON_RESPONSE:
-                        try {
-                            IExtPhoneCallbackStub.Result result =
-                                    (IExtPhoneCallbackStub.Result) msg.obj;
-                            ExtPhoneCallbackListener.this.onNrIconResponse(result.mSlotId,
-                                    result.mToken, result.mStatus, (NrIcon) result.mData);
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "EVENT_QUERY_NR_ICON_RESPONSE : Exception = " + e);
-                        }
-                        break;
-                    default :
-                        Log.d(TAG, "default : " + msg.what);
-                }
+    private Looper acquireGlobalLooper() {
+        Looper looper = null;
+        synchronized(sLock) {
+            if (sHandlerThread == null) {
+                sHandlerThread = new HandlerThread(TAG);
+                sHandlerThread.start();
             }
-        };
+            looper = sHandlerThread.getLooper();
+        }
+        return looper;
     }
+
+    private void releaseGlobalLooperUse() {
+        synchronized(sLock) {
+            if (sHandlerThread != null && sHandlerThread.getLooper() == mLooper) {
+                mLooper = null; // reset the reference every time when global looper is used.
+            }
+        }
+    }
+
+    public void setup() {
+        // Whenever looper is null like either user passes or re-registers it,
+        // try assigning a global looper.
+        if (mLooper == null) {
+            mLooper = acquireGlobalLooper();
+            if (mLooper == null) {
+                Log.e(TAG, "setup: looper is null, recovery is impossible");
+                return;
+            }
+            if (mHandler == null) {
+                mHandler = new InternalHandler(mLooper, this);
+            }
+        }
+    }
+
+    public void cleanup() {
+        // Don't receive any binder callback anymore.
+        mHandler = null;
+        // If looper belongs to the external, retain its reference.
+        releaseGlobalLooperUse();
+    }
+
+    // Avoid any possibility of handler holding ExtPhoneCallbackListener's reference
+    // by using a weak reference of ExtPhoneCallbackListener.
+    private static class InternalHandler extends Handler {
+        private WeakReference<ExtPhoneCallbackListener> mOwner;
+
+        public InternalHandler(Looper looper, ExtPhoneCallbackListener owner) {
+            super(looper);
+            mOwner = new WeakReference<ExtPhoneCallbackListener>(owner);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            if (DBG) {
+                Log.d(TAG, "handleMessage what=0x" + Integer.toHexString(msg.what) + " msg=" + msg);
+            }
+            ExtPhoneCallbackListener extPhoneCallbackListener = mOwner.get();
+            if (extPhoneCallbackListener == null) {
+                Log.d(TAG, "handleMessage ExtPhoneCallbackListener is destroyed already");
+                return;
+            }
+            switch (msg.what) {
+                case EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.getFacilityLockForAppResponse(
+                                result.mStatus, (int[]) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_GET_FACILITY_LOCK_FOR_APP_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_GET_NETWORK_SELECTION_MODE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.getNetworkSelectionModeResponse(
+                                result.mSlotId, result.mToken, result.mStatus,
+                                (NetworkSelectionMode) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_GET_NETWORK_SELECTION_MODE_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_GET_QOS_PARAMETERS_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.getQosParametersResponse(result.mSlotId,
+                                result.mToken, result.mStatus,
+                                (QosParametersResult) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_GET_QOS_PARAMETERS_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_GET_QTIRADIO_CAPABILITY_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.getQtiRadioCapabilityResponse(
+                                result.mSlotId, result.mToken, result.mStatus,
+                                (int) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_GET_QTIRADIO_CAPABILITY_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_GET_SECURE_MODE_STATUS_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.getSecureModeStatusResponse(result.mToken,
+                                result.mStatus, (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_GET_SECURE_MODE_STATUS_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_NETWORK_SCAN_RESULT:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.networkScanResult(result.mSlotId,
+                                result.mToken, result.mStatus.get(), result.mError,
+                                (List<CellInfo>) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_NETWORK_SCAN_RESULT : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_5G_CONFIG_INFO:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.on5gConfigInfo(result.mSlotId,
+                                result.mToken, result.mStatus, (NrConfigType) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_5G_CONFIG_INFO : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_5G_STATUS:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.on5gStatus(result.mSlotId, result.mToken,
+                                result.mStatus, (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_5G_STATUS : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_ANY_NR_BEARER_ALLOCATION:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onAnyNrBearerAllocation(result.mSlotId,
+                                result.mToken, result.mStatus,
+                                (BearerAllocationStatus) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_ANY_NR_BEARER_ALLOCATION : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DATA_DEACTIVATE_DELAY_TIME:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDataDeactivateDelayTime(result.mSlotId,
+                                (long) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DATA_DEACTIVATE_DELAY_TIME : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_CAPABILITY_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchCapabilityChange(
+                                result.mSlotId, result.mToken, result.mStatus,
+                                (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_CAPABILITY_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_CONFIG_CAPABILITY_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchConfigCapabilityChanged(
+                                result.mToken, result.mStatus,
+                                (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_CAPABILITY_CHANGED :"
+                                + " Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_CRITERIA_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchCriteriaChange(result.mSlotId,
+                                (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_CRITERIA_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_CONFIG_CRITERIA_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchConfigCriteriaChanged(
+                                (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_CRITERIA_CHANGED :"
+                                + " Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_RECOMMENDATION:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchRecommendation(result.mSlotId,
+                                (int) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_RECOMMENDATION : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DDS_SWITCH_CONFIG_RECOMMENDATION:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDdsSwitchConfigRecommendation(
+                                (int) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DDS_SWITCH_CONFIG_RECOMMENDATION :"
+                                + " Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_ENABLE_ENDC:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onEnableEndc(result.mSlotId,
+                                result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_ENABLE_ENDC : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_ENDC_STATUS:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onEndcStatus(result.mSlotId,
+                                result.mToken, result.mStatus, (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_ENDC_STATUS : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_EPDG_OVER_CELLULAR_DATA_SUPPORTED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onEpdgOverCellularDataSupported(
+                                result.mSlotId, (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_EPDG_OVER_CELLULAR_DATA_SUPPORTED : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_IMEI_TYPE_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onImeiTypeChanged(
+                                (QtiImeiInfo[]) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_IMEI_TYPE_CHANGED : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_NR_CONFIG_STATUS:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onNrConfigStatus(result.mSlotId,
+                                result.mToken, result.mStatus, (NrConfig) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_NR_CONFIG_STATUS : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_NR_DC_PARAM:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onNrDcParam(result.mSlotId,
+                                result.mToken, result.mStatus, (DcParam) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_NR_DC_PARAM : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_NR_ICON_TYPE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onNrIconType(result.mSlotId,
+                                result.mToken, result.mStatus, (NrIconType) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_NR_ICON_TYPE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_QOS_PARAMETERS_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onQosParametersChanged(result.mSlotId,
+                                result.mError, (QosParametersResult) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_QOS_PARAMETERS_CHANGED : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SECURE_MODE_STATUS_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onSecureModeStatusChange(
+                                (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SECURE_MODE_STATUS_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SEND_USER_PREFERENCE_FOR_DATA_DURING_VOICE_CALL:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.
+                                onSendUserPreferenceForDataDuringVoiceCall(result.mSlotId,
+                                result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SEND_USER_PREFERENCE_FOR_DATA_DURING_VOICE_CALL : "
+                                + "Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SEND_USER_PREFERENCE_CONFIG_FOR_DATA_DURING_CALL:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.
+                                onSendUserPreferenceConfigForDataDuringVoiceCall(
+                                result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SEND_USER_PREFERENCE_CONFIG_FOR_DATA_DURING_CALL"
+                                + " : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SET_NR_CONFIG:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onSetNrConfig(result.mSlotId,
+                                result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SET_NR_CONFIG : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SIGNAL_STRENGTH:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onSignalStrength(result.mSlotId,
+                                result.mToken, result.mStatus, (SignalStrength) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SIGNAL_STRENGTH : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SIM_TYPE_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onSimTypeChanged(
+                                (QtiSimType[]) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SIM_TYPE_CHANGED : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_UPPER_LAYER_IND_INFO:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onUpperLayerIndInfo(result.mSlotId,
+                                result.mToken, result.mStatus,
+                                (UpperLayerIndInfo) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_UPPER_LAYER_IND_INFO : Exception = " + e);
+                    }
+                    break;
+                case EVENT_QUERY_CALL_FORWARD_STATUS_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.queryCallForwardStatusResponse(
+                                result.mStatus, (QtiCallForwardInfo[]) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_QUERY_CALL_FORWARD_STATUS_RESPONSE : Exception = " +
+                                e);
+                    }
+                    break;
+                case EVENT_SEND_CDMA_SMS_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.sendCdmaSmsResponse(result.mSlotId,
+                                result.mToken, result.mStatus, (SmsResult) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SEND_CDMA_SMS_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_CARRIER_INFO_FOR_IMSI_ENCRYPTION_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setCarrierInfoForImsiEncryptionResponse(
+                                result.mSlotId, result.mToken,
+                                (QRadioResponseInfo) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_CARRIER_INFO_FOR_IMSI_ENCRYPTION_RESPONSE : " +
+                                "Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_MSIM_PREFERENCE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setMsimPreferenceResponse(result.mToken,
+                                result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_MSIM_PREFERENCE_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_NETWORK_SELECTION_MODE_AUTOMATIC_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setNetworkSelectionModeAutomaticResponse(
+                                result.mSlotId, result.mToken, result.mError);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_NETWORK_SELECTION_MODE_AUTOMATIC_RESPONSE : " +
+                                "Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_NETWORK_SELECTION_MODE_MANUAL_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setNetworkSelectionModeManualResponse(
+                                result.mSlotId, result.mToken, result.mError);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_NETWORK_SELECTION_MODE_MANUAL_RESPONSE : " +
+                                "Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_SIM_TYPE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setSimTypeResponse(result.mToken,
+                                result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_SIM_TYPE_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_SMART_DDS_SWITCH_TOGGLE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setSmartDdsSwitchToggleResponse(
+                                result.mToken, (boolean) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_SMART_DDS_SWITCH_TOGGLE_RESPONSE : Exception = " +
+                                e);
+                    }
+                    break;
+                case EVENT_START_NETWORK_SCAN_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.startNetworkScanResponse(result.mSlotId,
+                                result.mToken, result.mError);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_START_NETWORK_SCAN_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_STOP_NETWORK_SCAN_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.stopNetworkScanResponse(result.mSlotId,
+                                result.mToken, result.mError);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_STOP_NETWORK_SCAN_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DUAL_DATA_CAPABILITY_CHANGED:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDualDataCapabilityChanged(
+                                result.mToken, result.mStatus, (boolean)result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DUAL_DATA_CAPABILITY_CHANGED : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_DUAL_DATA_USER_PREFERENCE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setDualDataUserPreferenceResponse(
+                                result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_DUAL_DATA_USER_PREFERENCE_RESPONSE :" +
+                                "Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_DUAL_DATA_RECOMMENDATION:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onDualDataRecommendation(
+                                (DualDataRecommendation)result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_DUAL_DATA_RECOMMENDATION : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_SIM_PERSO_UNLOCK_STATUS_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onSimPersoUnlockStatusChange(
+                                result.mSlotId, (QtiPersoUnlockStatus)result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_SIM_PERSO_UNLOCK_STATUS_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_CELLULAR_ROAMING_PREFERENCE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setCellularRoamingPreferenceResponse(
+                                result.mSlotId, result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_CELLULAR_ROAMING_PREFERENCE_RESPONSE : " +
+                                "Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_CIWLAN_AVAILABLE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onCiwlanAvailable(
+                                result.mSlotId, (boolean)result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG,
+                                "EVENT_ON_CIWLAN_AVAILABLE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_CIWLAN_CONFIG_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onCiwlanConfigChange(
+                                result.mSlotId, (CiwlanConfig)result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG,
+                                "EVENT_ON_CIWLAN_CONFIG_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_SET_CIWLAN_MODE_USER_PREFERENCE_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.setCiwlanModeUserPreferenceResponse(
+                                result.mSlotId, result.mToken, result.mStatus);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_SET_CIWLAN_MODE_USER_PREFERENCE_RESPONSE" +
+                                " : Exception = " + e);
+                    }
+                    break;
+                case EVENT_ON_NR_ICON_CHANGE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onNrIconChange(result.mSlotId,
+                                (NrIcon) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_ON_NR_ICON_CHANGE : Exception = " + e);
+                    }
+                    break;
+                case EVENT_QUERY_NR_ICON_RESPONSE:
+                    try {
+                        IExtPhoneCallbackStub.Result result =
+                                (IExtPhoneCallbackStub.Result) msg.obj;
+                        extPhoneCallbackListener.onNrIconResponse(result.mSlotId,
+                                result.mToken, result.mStatus, (NrIcon) result.mData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "EVENT_QUERY_NR_ICON_RESPONSE : Exception = " + e);
+                    }
+                    break;
+                default :
+                    Log.d(TAG, "default : " + msg.what);
+            }
+        }
+    };
 
     public void onNrIconType(int slotId, Token token, Status status, NrIconType nrIconType) throws
             RemoteException {
@@ -989,11 +1022,11 @@ public class ExtPhoneCallbackListener {
 
         private void send(int what, int arg1, int arg2, Object obj) {
             ExtPhoneCallbackListener listener = mExtPhoneCallbackListenerWeakRef.get();
-            if (listener != null) {
+            if (listener != null && listener.mHandler != null) {
                 Message.obtain(listener.mHandler, what, arg1, arg2, obj).sendToTarget();
             } else {
                 if (DBG) {
-                    Log.d(TAG, " listener is null");
+                    Log.d(TAG, " listener or its handler is null");
                 }
             }
         }
