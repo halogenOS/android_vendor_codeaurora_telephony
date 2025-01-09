@@ -909,4 +909,10 @@ public class QtiImsExtUtils {
     public static int[] getIntArray(int phoneId, Context context, String carrierConfig) {
         return QtiCarrierConfigHelper.getInstance().getIntArray(context, phoneId, carrierConfig);
     }
+
+    // Returns true if Carrier supports glasses free 3D video
+    public static boolean isGlassesFree3DVideoSupported(int phoneId, Context context) {
+        return isCarrierConfigEnabled(phoneId, context,
+                QtiCarrierConfigs.KEY_CARRIER_GLASSES_FREE_3D_VIDEO_SUPPORTED);
+    }
 }

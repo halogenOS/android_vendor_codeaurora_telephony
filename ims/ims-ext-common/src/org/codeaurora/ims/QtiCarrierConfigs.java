@@ -215,4 +215,10 @@ public class QtiCarrierConfigs {
      */
     public static final String KEY_CARRIER_VISUALIZED_VOICE_SUPPORTED =
         "carrier_visualized_voice_supported_bool";
+
+    /* Config to determine if Carrier supports glasses free 3D video
+     * true - if glasses free 3D video is supported else false
+     */
+    public static final String KEY_CARRIER_GLASSES_FREE_3D_VIDEO_SUPPORTED =
+        "carrier_glasses_free_3D_video_supported_bool";
 }
