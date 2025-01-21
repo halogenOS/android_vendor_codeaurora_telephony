@@ -142,9 +142,9 @@ public class ExtPhoneCallbackListener {
                 Log.e(TAG, "setup: looper is null, recovery is impossible");
                 return;
             }
-            if (mHandler == null) {
-                mHandler = new InternalHandler(mLooper, this);
-            }
+        }
+        if (mHandler == null) {
+            mHandler = new InternalHandler(mLooper, this);
         }
     }
 
