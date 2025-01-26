@@ -26,7 +26,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
 
@@ -398,4 +398,15 @@ interface IQtiImsExt {
     */
     IImsArController getArController(int phoneId);
 
+    /**
+     * setGlassesFree3dVideoCapability
+     * Set glasses free 3d video capability to modem
+     *
+     * @param phoneId indicates the phone instance which triggered the request
+     * @param enable3dVideo sends whether device supports glasses free 3d video to lower layer
+     * @param listener an IQtiImsExtListener instance to indicate the response
+     * @return void
+     */
+    oneway void setGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
+        IQtiImsExtListener listener);
 }

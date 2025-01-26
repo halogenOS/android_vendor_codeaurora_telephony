@@ -26,7 +26,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
 package org.codeaurora.ims;
@@ -494,4 +494,13 @@ public class QtiImsExtManager {
         }
     }
 
+    public void setGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
+            IQtiImsExtListener listener) throws QtiImsException {
+        validateInvariants(phoneId);
+        try {
+            mQtiImsExt.setGlassesFree3dVideoCapability(phoneId, enable3dVideo, listener);
+        } catch (RemoteException e) {
+            throw new QtiImsException("Remote ImsService setGlassesFree3dVideoCapability: " + e);
+        }
+    }
 }

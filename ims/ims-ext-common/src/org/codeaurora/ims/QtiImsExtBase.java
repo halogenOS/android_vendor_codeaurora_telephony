@@ -26,7 +26,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
 package org.codeaurora.ims;
@@ -318,6 +318,16 @@ public abstract class QtiImsExtBase {
                     "getArController", mExecutor,
                     QtiImsExtUtils.MODIFY_PHONE_STATE, mContext);
         }
+
+        @Override
+        public void setGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
+                IQtiImsExtListener listener) throws RemoteException {
+            QtiImsExtUtils.executeMethodAsync(() ->
+                    QtiImsExtBase.this.onSetGlassesFree3dVideoCapability(phoneId,
+                    enable3dVideo, listener),
+                    "setGlassesFree3dVideoCapability", mExecutor,
+                    QtiImsExtUtils.MODIFY_PHONE_STATE, mContext);
+        }
     };
 
     private QtiImsExtBinder mQtiImsExtBinder;
@@ -468,4 +478,9 @@ public abstract class QtiImsExtBase {
         // no-op
         return null;
     }
+
+    protected void onSetGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
+            IQtiImsExtListener listener) {
+        // no-op
+}
 }
