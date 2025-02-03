@@ -80,6 +80,7 @@ public class ExtTelephonyManager {
     public static final int FEATURE_SMART_TEMP_DDS_VIA_RADIO_CONFIG        = FEATURE_BASE + 6;
     public static final int FEATURE_EMERGENCY_ENHANCEMENT                  = FEATURE_BASE + 7;
     public static final int FEATURE_TDSCDMA_SUPPORT                        = FEATURE_BASE + 8;
+    public static final int FEATURE_NITZ_ENHANCEMENT                       = FEATURE_BASE + 9;
 
     private static ExtTelephonyManager mInstance;
 
