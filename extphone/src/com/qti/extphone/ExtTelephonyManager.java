@@ -29,7 +29,7 @@
 
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -81,6 +81,7 @@ public class ExtTelephonyManager {
     public static final int FEATURE_EMERGENCY_ENHANCEMENT                  = FEATURE_BASE + 7;
     public static final int FEATURE_TDSCDMA_SUPPORT                        = FEATURE_BASE + 8;
     public static final int FEATURE_NITZ_ENHANCEMENT                       = FEATURE_BASE + 9;
+    public static final int FEATURE_NR_6RX_ICON                            = FEATURE_BASE + 10;
 
     private static ExtTelephonyManager mInstance;
 
