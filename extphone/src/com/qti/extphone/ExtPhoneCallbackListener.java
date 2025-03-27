@@ -103,14 +103,11 @@ public class ExtPhoneCallbackListener {
      * sHandlerThread is destroyed when process dies.
      */
     private static HandlerThread sHandlerThread;
+    private static Object sLock = new Object();
     private Looper mLooper;
 
     public ExtPhoneCallbackListener() {
-        if (sHandlerThread == null) {
-            sHandlerThread = new HandlerThread(TAG);
-            sHandlerThread.start();
-        }
-        mLooper = sHandlerThread.getLooper();
+        mLooper = acquireGlobalLooper();
         init();
     }
 
@@ -119,8 +116,38 @@ public class ExtPhoneCallbackListener {
         init();
     }
 
-    public void cleanUp() {
-        mLooper = null;
+    private Looper acquireGlobalLooper() {
+        Looper looper = null;
+        synchronized(sLock) {
+            if (sHandlerThread == null) {
+                sHandlerThread = new HandlerThread(TAG);
+                sHandlerThread.start();
+            }
+            looper = sHandlerThread.getLooper();
+        }
+        return looper;
+    }
+
+    private void releaseGlobalLooperUse() {
+        synchronized(sLock) {
+            if (sHandlerThread != null && sHandlerThread.getLooper() == mLooper) {
+                mLooper = null; // reset the reference every time when global looper is used.
+            }
+        }
+    }
+
+    public void setup() {
+        // Whenever looper is null like either user passes or re-registers it,
+        // try assigning a global looper.
+        if (mLooper == null) {
+            mLooper = acquireGlobalLooper();
+            if (mHandler == null) init();
+        }
+    }
+
+    public void cleanup() {
+        // If looper belongs to the external, retain its reference.
+        releaseGlobalLooperUse();
     }
 
     private void init() {

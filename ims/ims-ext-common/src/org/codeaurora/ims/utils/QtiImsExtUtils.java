@@ -28,7 +28,7 @@
  *
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted (subject to the limitations in the
@@ -64,6 +64,7 @@
 package org.codeaurora.ims.utils;
 
 import android.Manifest;
+import android.app.AppOpsManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
@@ -71,6 +72,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
@@ -912,9 +914,16 @@ public class QtiImsExtUtils {
                 QtiCarrierConfigs.KEY_CARRIER_VIDEO_ONLINE_SERVICE_SUPPORTED);
     }
 
-    public static void executeMethodAsync(Runnable r, String errorLogName, Executor executor,
-            String permission, Context context) throws RemoteException {
-        context.enforceCallingOrSelfPermission(permission, errorLogName);
+    public static void executeMethodAsync(Runnable r, String errorLogName,
+            Executor executor, String permission, Context context) throws RemoteException {
+        if (MODIFY_PHONE_STATE.equals(permission)) {
+            enforceCallingOrSelfModifyPhoneState(context, errorLogName);
+        } else if (READ_PHONE_STATE.equals(permission)) {
+            enforceCallingOrSelfReadPhoneState(context, errorLogName);
+        } else {
+            Log.w(LOG_TAG, "executeMethodAsync for " + errorLogName +
+                    "No permission check");
+        }
         try {
             CompletableFuture.runAsync(r, executor).join();
         } catch (CancellationException | CompletionException e) {
@@ -926,7 +935,15 @@ public class QtiImsExtUtils {
 
     public static <T> T executeMethodAsyncForResult(Supplier<T> r, String errorLogName,
             Executor executor, String permission, Context context) throws RemoteException {
-        context.enforceCallingOrSelfPermission(permission, errorLogName);
+        if (MODIFY_PHONE_STATE.equals(permission)) {
+            enforceCallingOrSelfModifyPhoneState(context, errorLogName);
+        } else if (READ_PHONE_STATE.equals(permission)) {
+            enforceCallingOrSelfReadPhoneState(context, errorLogName);
+        } else {
+            Log.w(LOG_TAG, "executeMethodAsyncForResult for " + errorLogName +
+                    "No permission check");
+        }
+
         try {
             CompletableFuture<T> future = CompletableFuture.supplyAsync(r, executor);
             return future.get();
@@ -934,6 +951,36 @@ public class QtiImsExtUtils {
             Log.w(LOG_TAG, "executeMethodAsyncForResult for " + errorLogName + " failed with: " +
                     e.getMessage());
             throw new RemoteException(e.getMessage());
+        }
+    }
+
+    private static void enforceCallingOrSelfModifyPhoneState(Context context,
+            String message) {
+        context.enforceCallingOrSelfPermission(android.Manifest.permission.MODIFY_PHONE_STATE,
+                message);
+    }
+
+    private static void enforceCallingOrSelfReadPhoneState(Context context,
+            String message) {
+        try {
+            context.enforceCallingOrSelfPermission(
+                    android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE, message);
+            // SKIP checking for run-time permission since caller has PRIVILEGED permission
+            return;
+        } catch (SecurityException privilegedPhoneStateException) {
+            try {
+                context.enforceCallingOrSelfPermission(
+                        android.Manifest.permission.READ_PHONE_STATE, message);
+            } catch (SecurityException phoneStateException) {
+                throw phoneStateException;
+            }
+        }
+        // We have READ_PHONE_STATE permission, throw exception if the AppOps bit has been
+        // revoked.
+        AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+        if (appOps.noteOpNoThrow(AppOpsManager.OPSTR_READ_PHONE_STATE, Binder.getCallingUid(),
+                    context.getOpPackageName(), null, null) != AppOpsManager.MODE_ALLOWED) {
+            throw new SecurityException(message);
         }
     }
 }
