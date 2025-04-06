@@ -25,8 +25,8 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
 
@@ -34,6 +34,7 @@ package org.codeaurora.ims.internal;
 
 import android.os.Bundle;
 import org.codeaurora.ims.internal.ICrsCrbtController;
+import org.codeaurora.ims.internal.IVideoCallProvider;
 import org.codeaurora.ims.internal.IQtiImsExtListener;
 import org.codeaurora.ims.internal.IImsArController;
 import org.codeaurora.ims.internal.IImsMultiIdentityInterface;
@@ -409,4 +410,12 @@ interface IQtiImsExt {
      */
     oneway void setGlassesFree3dVideoCapability(int phoneId, boolean enable3dVideo,
         IQtiImsExtListener listener);
+
+    /**
+     * Retrieves vendor video call provider
+     *
+     * @param phoneId indicates the phone instance which triggered the request
+     * @param token unique identifier created per call session. Passed to clients through extras
+     */
+    IVideoCallProvider getVideoProvider(int phoneId, int token);
 }

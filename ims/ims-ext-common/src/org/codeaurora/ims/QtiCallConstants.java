@@ -25,44 +25,16 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted (subject to the limitations in the
- * disclaimer below) provided that the following conditions are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *
- *   * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
- * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
- * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
- * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package org.codeaurora.ims;
 
+import android.telecom.VideoProfile;
 import android.telephony.ims.ImsReasonInfo;
+
 /**
  * The class contains definitions for Qti specific constants related to any
  * value added features for video telephony.
@@ -643,4 +615,26 @@ public class QtiCallConstants {
 
     // possible conference abort reasons
     public static final int PENDING_EMERGENCY_CALL = 0;
+
+    // EXTRA For dual video
+    public static final String EXTRA_DUAL_VIDEO_TOKEN = "token";
+    public static final int INVALID_TOKEN_ID = -1;
+    // constant to indicate dual VT call mode (maps to ImsCallProfile value)
+    public static final String EXTRA_DUAL_VIDEO_CALL_TYPE = "dualVtCallType";
+    // constants to indicate supported dual VT modes
+    public static final String DUAL_VIDEO_CAPABILITY = "dualVtCapability";
+    public static final int DUAL_VIDEO_DISABLED = 0;
+    public static final int DUAL_VIDEO_TX_ENABLED = 1;
+    public static final int DUAL_VIDEO_RX_ENABLED = 2;
+    public static final int DUAL_VIDEO_TX_RX_ENABLED = 3;
+
+    public static final int DUAL_VIDEO_MAIN_STREAM = 0;
+    public static final int DUAL_VIDEO_ALT_STREAM = 1;
+
+    // Dual VT VideoProfile values (maps to VideoProfile alt values)
+    public static final int STATE_ALT_TX_ENABLED = 0x08;
+    public static final int STATE_ALT_RX_ENABLED = 0x10;
+    public static final int STATE_ALT_BIDIRECTIONAL = STATE_ALT_TX_ENABLED | STATE_ALT_RX_ENABLED;
+    public static final int STATE_DUAL_BIDIRECTIONAL =
+            VideoProfile.STATE_BIDIRECTIONAL | STATE_ALT_BIDIRECTIONAL;
 }

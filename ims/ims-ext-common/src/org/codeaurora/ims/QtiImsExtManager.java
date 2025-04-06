@@ -25,7 +25,7 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
  * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear.
  */
@@ -46,6 +46,7 @@ import org.codeaurora.ims.internal.ICrsCrbtController;
 import org.codeaurora.ims.internal.IQtiImsExt;
 import org.codeaurora.ims.internal.IQtiImsExtListener;
 import org.codeaurora.ims.internal.IImsArController;
+import org.codeaurora.ims.internal.IVideoCallProvider;
 import org.codeaurora.ims.internal.IImsMultiIdentityInterface;
 import org.codeaurora.ims.internal.IImsScreenShareController;
 import org.codeaurora.ims.utils.QtiImsExtUtils;
@@ -507,6 +508,26 @@ public class QtiImsExtManager {
                                                        listener.getBinder());
         } catch (RemoteException e) {
             throw new QtiImsException("Remote ImsService setGlassesFree3dVideoCapability: " + e);
+        }
+    }
+
+    public VideoCallProviderManager getVideoCallProviderManager(int phoneId, int token)
+            throws QtiImsException {
+        validateInvariants(phoneId);
+        IVideoCallProvider provider = getVideoCallProvider(phoneId, token);
+        if (provider == null) {
+            throw new QtiImsException("VideoCallProvider Interface is null");
+        }
+        return new VideoCallProviderManager(phoneId, token, provider, this);
+    }
+
+    /* package private */
+    IVideoCallProvider getVideoCallProvider(int phoneId, int token) throws QtiImsException {
+        validateInvariants(phoneId);
+        try {
+            return mQtiImsExt.getVideoProvider(phoneId, token);
+        } catch (RemoteException e) {
+            throw new QtiImsException("Failed to retrieve VideoCallProvider Interface : " + e);
         }
     }
 }
