@@ -25,6 +25,10 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 package org.codeaurora.ims.utils;
 
@@ -83,6 +87,14 @@ public class QtiCarrierConfigHelper {
                         Log.d(TAG, "Clear carrier configs on phone Id: " + phoneId);
                         mConfigsMap.remove(phoneId);
                     }
+                }
+            } else if (intent != null &&
+                    intent.getAction().equals(TelephonyManager.ACTION_MULTI_SIM_CONFIG_CHANGED)) {
+                int activeModemCount = intent.getIntExtra(
+                        TelephonyManager.EXTRA_ACTIVE_SIM_SUPPORTED_COUNT, 1);
+                Log.d(TAG, "activeModemCount:: " + activeModemCount);
+                if (activeModemCount != PHONE_COUNT) {
+                    PHONE_COUNT = activeModemCount;
                 }
             }
         }
@@ -150,10 +162,11 @@ public class QtiCarrierConfigHelper {
                 loadConfigsForSubInfo(subInfo);
             }
         }
-        subCache = new int[PHONE_COUNT];
+        subCache = new int[2];
         IntentFilter filter = new IntentFilter(CarrierConfigManager
                 .ACTION_CARRIER_CONFIG_CHANGED);
         filter.addAction(QtiCallConstants.ACTION_ESSENTIAL_RECORDS_LOADED);
+        filter.addAction(TelephonyManager.ACTION_MULTI_SIM_CONFIG_CHANGED);
         mContext.registerReceiver(mReceiver, filter, Context.RECEIVER_EXPORTED);
         mSubscriptionManager.addOnSubscriptionsChangedListener(mOnSubscriptionsChangeListener);
     }
