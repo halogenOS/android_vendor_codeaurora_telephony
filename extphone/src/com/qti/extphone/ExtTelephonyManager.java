@@ -1297,30 +1297,6 @@ public class ExtTelephonyManager {
         return token;
     }
 
-    public boolean isEmcSupported(int slotId) {
-        if (isServiceConnected()) {
-            try {
-                return mExtTelephonyService.isEmcSupported(slotId);
-            } catch (RemoteException ex) {
-                Log.e(LOG_TAG, "isEmcSupported Failed.", ex);
-            }
-        }
-        Log.e(LOG_TAG, "isEmcSupported: service not connected!");
-        return false;
-    }
-
-    public boolean isEmfSupported(int slotId) {
-        if (isServiceConnected()) {
-            try {
-                return mExtTelephonyService.isEmfSupported(slotId);
-            } catch (RemoteException ex) {
-                Log.e(LOG_TAG, "isEmfSupported Failed.", ex);
-            }
-        }
-        Log.e(LOG_TAG, "isEmfSupported: service not connected!");
-        return false;
-    }
-
     public Token queryNrIcon(int slotId, Client client) {
         Token token = null;
         if (!isServiceConnected()) {
