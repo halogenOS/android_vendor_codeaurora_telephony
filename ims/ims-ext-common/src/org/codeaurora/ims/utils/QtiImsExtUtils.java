@@ -914,9 +914,9 @@ public class QtiImsExtUtils {
                 QtiCarrierConfigs.KEY_CARRIER_VIDEO_ONLINE_SERVICE_SUPPORTED);
     }
 
-     // Overloaded executeMethodAsync method for cases where permissions
-     // checks were already performed.
-     public static void executeMethodAsync(Runnable r, String errorLogName,
+    // Overloaded executeMethodAsync method for cases where permissions
+    // checks were already performed.
+    public static void executeMethodAsync(Runnable r, String errorLogName,
                                            Executor executor) throws RemoteException {
         try {
             CompletableFuture.runAsync(r, executor).join();
@@ -938,7 +938,7 @@ public class QtiImsExtUtils {
                     "No permission check");
         }
 
-      try {
+        try {
             CompletableFuture.runAsync(r, executor).join();
         } catch (CancellationException | CompletionException e) {
             Log.w(LOG_TAG, "executeMethodAsync for " + errorLogName + " failed with: " +
